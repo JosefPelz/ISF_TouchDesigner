@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CudaCompile Include="ISFKernel.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="GL\glew.c">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="GL\glewinfo.c">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="ISFTOP.cpp" />
+    <ClCompile Include="ISF.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CPlusPlus_Common.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="GL_Extensions.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="GL\glew.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="TOP_CPlusPlusBase.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="GL\wglew.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="ISFTOP.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.2\include\cufft.h" />
+    <ClInclude Include="ISF.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Common">
+      <UniqueIdentifier>{49cedd21-58ef-4370-b6b4-be8718158776}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="ISFTOP.rc" />
+  </ItemGroup>
+</Project>

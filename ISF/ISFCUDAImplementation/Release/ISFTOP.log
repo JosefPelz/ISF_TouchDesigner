@@ -1,0 +1,16 @@
+﻿  ISFTOP.cpp
+C:\Users\josef\iCloudDrive\Documents\Uni\MASTER\ISFTOP\ISFTOP.cpp(169,32): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\josef\iCloudDrive\Documents\Uni\MASTER\ISFTOP\ISFTOP.cpp(169,28): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\josef\iCloudDrive\Documents\Uni\MASTER\ISFTOP\ISFTOP.cpp(169,24): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\josef\iCloudDrive\Documents\Uni\MASTER\ISFTOP\ISFTOP.cpp(170,35): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\josef\iCloudDrive\Documents\Uni\MASTER\ISFTOP\ISFTOP.cpp(171,33): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\josef\iCloudDrive\Documents\Uni\MASTER\ISFTOP\ISFTOP.cpp(214,119): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\josef\iCloudDrive\Documents\Uni\MASTER\ISFTOP\ISFTOP.cpp(214,114): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\josef\iCloudDrive\Documents\Uni\MASTER\ISFTOP\ISFTOP.cpp(214,109): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+     Creating library C:\Users\josef\iCloudDrive\Documents\Uni\MASTER\ISFTOP\Release\ISFTOP.lib and object C:\Users\josef\iCloudDrive\Documents\Uni\MASTER\ISFTOP\Release\ISFTOP.exp
+  Generating code
+  1 of 63 functions ( 1.6%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    0 functions had inline decision re-evaluated but remain unchanged
+  Finished generating code
+  ISFTOP.vcxproj -> C:\Users\josef\iCloudDrive\Documents\Uni\MASTER\ISFTOP\Release\ISFTOP.dll
