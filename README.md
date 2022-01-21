@@ -16,6 +16,9 @@ The interactive_prescribed_velocity.toe expects you to go into *perform mode*. T
 Most relevant parameters can be found in the (red colored) *ISF* component under the *General* tab.  
 
 ##
+The particles are sorted using a technique by Vincent Houzé: https://github.com/vinz9/CudaSortTOP
+
+##
 Please don't publish any results without my permission.
 
 Feedback to contact.pelz@gmail.com, instagram.com/josefluispelz or twitter.com/josefluispelz
