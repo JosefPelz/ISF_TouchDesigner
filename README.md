@@ -1,16 +1,18 @@
-# ISF_TouchDesigner
-real-time implementation of Incompressible Schrödinger Flow in TouchDesigner
+# Incompressible Schrödinger FLow in real-time in TouchDesigner
+original paper by Albert Chern et al.: https://cseweb.ucsd.edu/~alchern/projects/SchrodingersSmoke/
 
-original paper: https://cseweb.ucsd.edu/~alchern/projects/SchrodingersSmoke/
+CUDA enabled GPU required. Built in TouchDesigner version 2021.15800
 
-First test version.
 
-Feel free to check if the .toe files in /TouchDesignerProjects throw any errors.
-It would be very helpful to know what frame rate you get on which GPU
-Feedback to contact.pelz@gmail.com, instagram.com/josefluispelz or twitter.com/josefluispelz
+## Usage
+Open a .toe file from the ISF/TouchDesignerProjects folder on a windows machine with CUDA enabled GPU.
+Press shift+r to reset the simulation.
+Press F1 to go into *perform mode*
+Press esc to leave *perform mode*
 
-The interactive_prescribed_velicity.toe expects you to go into perform mode and move your mouse
+The interactive_prescribed_velocity.toe expects you to go into *perform mode*. The simulation will then react to mouse movement. 
 
-CUDA enabled GPU required. Built in TD version 2021.15800
-
+##
 Please don't publish any results without my permission.
+
+Feedback to contact.pelz@gmail.com, instagram.com/josefluispelz or twitter.com/josefluispelz
