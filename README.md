@@ -11,7 +11,7 @@ Press F1 to go into *perform mode*
 Press esc to leave *perform mode*  
 In *perform mode* you can use your mouse to pan the camera.  
   
-The interactive_prescribed_velocity.toe expects you to go into *perform mode*. The simulation will then react to mouse movement.  
+The interactive*.toe expect you to go into *perform mode*. The simulation will then react to mouse movement.  
   
 Most relevant parameters can be found in the (red colored) *ISF* component under the *General* tab.  
 
