@@ -2,6 +2,7 @@
 #include <cstdio>
 
 ISF::ISF(){
+	//Setting default values on init
 	N = make_int3(0,0,0);
 	L = make_float3(-1.0, -1.0, -1.0);
 	Hbar = 0.0;
@@ -21,11 +22,14 @@ ISF::ISF(){
 void ISF::initBuffers() {
 	if (N.x != 0) {
 		int totalSize = N.x * N.y * N.z;
+		
+		// Creating cufftHandle Plan for the FFT
 		if (cufftPlan3d(&Plan, N.x, N.y, N.z, CUFFT_C2C) != cudaSuccess) {
 			fprintf(stderr, "CUFFT error: Failed to create cufft plan 3d\n");
 			return;
 		}
 
+		//Allocating device memory for all arrays
 		cudaMalloc((void**)&Psi1, sizeof(cufftComplex) * totalSize);
 		if (cudaGetLastError() != cudaSuccess) {
 			fprintf(stderr, "Cuda error: Failed to allocate Psi1 \n");
@@ -58,6 +62,7 @@ void ISF::initBuffers() {
 }
 void ISF::deleteBuffers(){
 	if (BuffersInitialized) {
+		//Free device memory
 		cudaFree(Psi1);
 		if (cudaGetLastError() != cudaSuccess) {
 			fprintf(stderr, "Cuda error: Failed to free Psi1\n");

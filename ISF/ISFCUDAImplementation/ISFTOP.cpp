@@ -88,12 +88,12 @@ DestroyTOPInstance(TOP_CPlusPlusBase* instance, TOP_Context *context)
 ISFTOP::ISFTOP(const OP_NodeInfo* info, TOP_Context *context)
 : myNodeInfo(info), myExecuteCount(0), myError(nullptr)
 {
-	reset = true;
+	reset = true;  //Setting reset to true on creation to load initial data
 }
 
 ISFTOP::~ISFTOP()
 {
-	isf.deleteBuffers();
+	isf.deleteBuffers(); //deallocating memory space when instance is deleted
 }
 
 void
@@ -104,6 +104,7 @@ ISFTOP::getGeneralInfo(TOP_GeneralInfo* ginfo, const OP_Inputs *inputs, void* re
     // only needs to cook when inputs/parameters change.
 	ginfo->cookEveryFrame = false;
 	ginfo->cookEveryFrameIfAsked = inputs->getParInt("Cookeveryframe");
+	//Only cook every frame if the respective parameter is set to true and the output is used somewhere
 }
 
 bool
@@ -116,10 +117,12 @@ ISFTOP::getOutputFormat(TOP_OutputFormat* format, const OP_Inputs *inputs, void*
 
 	format->bitsPerChannel = 32;
 	format->floatPrecision = true;
-
+	//Setting output texture format to 32-bit rgba
 	return true;
 }
 
+
+//Functions defined in the ISFKernel.cu file
 extern "C" void
 launch_readPsi(dim3 numBlocks, dim3 threadsPerBlock, cudaArray *g_data_array, ISF isf);
 
@@ -143,6 +146,8 @@ launch_ApplicationOfExternalForce(dim3 numBlocks, dim3 threadsPerBlock, ISF isf,
 
 #include <iostream>
 #include <typeinfo>
+
+//This function is executed every time the Cplusplus TOP cooks (is executed)
 void
 ISFTOP::execute(TOP_OutputFormatSpecs* outputFormat ,
 							const OP_Inputs* inputs,
@@ -154,14 +159,15 @@ ISFTOP::execute(TOP_OutputFormatSpecs* outputFormat ,
 	myError = nullptr;
 
 	cudaArray *inputMem = nullptr;
-	if (inputs->getNumInputs() > 0)
+	if (inputs->getNumInputs() > 0) //only execute if any input provided
 	{
 		const OP_TOPInput* topInput = inputs->getInputTOP(0);
 		const OP_TimeInfo* timeInfo = inputs->getTimeInfo();
-		if (timeInfo->deltaFrames > 0 || reset) {
+		if (timeInfo->deltaFrames > 0 || reset) { //We check if deltaFrames>0 to prevent multiple cooks on one frame
+			//reading parameters
 			int Nx, Ny, Nz;
 			inputs->getParInt3("N", Nx, Ny, Nz);
-			if (Nx != isf.N.x || Ny != isf.N.y || Nz != isf.N.z) reset = true;
+			if (Nx != isf.N.x || Ny != isf.N.y || Nz != isf.N.z) reset = true; //If resolution changed, reset simulation
 			isf.N = make_int3(Nx, Ny, Nz);
 
 			double Lx, Ly, Lz;
@@ -179,36 +185,40 @@ ISFTOP::execute(TOP_OutputFormatSpecs* outputFormat ,
 			double efx,efy,efz;
 			inputs->getParDouble3("Externalforce", efx, efy, efz);
 
+
+			//calculating number of blocks
 			dim3 threadsPerBlock(tpbx, tpby, tpbz);
 			dim3 numBlocks;
 			numBlocks.x = int(ceil(float(Nx) / float(tpbx)));
 			numBlocks.y = int(ceil(float(Ny) / float(tpby)));
 			numBlocks.z = int(ceil(float(Nz) / float(tpbz)));
 
-			if (topInput->cudaInput == nullptr)
+			if (topInput->cudaInput == nullptr) //no valid input provided
 			{
 				myError = "CUDA memory for input TOP was not mapped correctly.";
 				return;
 			}
 
-			if (topInput->pixelFormat != GL_RGBA32F) {
+			if (topInput->pixelFormat != GL_RGBA32F) { //input is expected to have 32-bit rgba pixel format
 				myError = "Input Texture must be 32-bit float (RGBA).";
 				return;
 			}
 
-			if (reset) {
+			if (reset) { //read from input texture only on reset. Otherwise the last state of Psi will be used
 				inputMem = topInput->cudaInput;
-				if (isf.BuffersInitialized) isf.deleteBuffers();
-				isf.initBuffers();
-				launch_readPsi(numBlocks, threadsPerBlock, inputMem, isf);
-				isf.T = 0.0;
+				if (isf.BuffersInitialized) isf.deleteBuffers(); //clear buffers before reloading
+				isf.initBuffers();	//allocating memory & creating cufftHandle plan
+				launch_readPsi(numBlocks, threadsPerBlock, inputMem, isf); //read from input texture
+				isf.T = 0.0; //setting total time of simulation to 0
 			}
 
+			//Prescribed Velocity from 2nd input if valid and requested by user
 			if (applyPrescribedForces && isf.BuffersInitialized && inputs->getNumInputs() > 1 && (reset || loadPrescribedVelocityEachFrame)) {
 				launch_readPrescribedVelocity(numBlocks, threadsPerBlock, inputs->getInputTOP(1)->cudaInput, isf);
 			}
 
 			if (isf.BuffersInitialized) {
+				//User can deactive the Schrödinger integration, e.g., for initial pressure projection.
 				if (isf.Flow) {
 					launch_schroedingerFlow(numBlocks, threadsPerBlock, isf);
 					if (applyExternalForce) launch_ApplicationOfExternalForce(numBlocks, threadsPerBlock, isf, make_float3(efx, efy, efz));
@@ -223,7 +233,9 @@ ISFTOP::execute(TOP_OutputFormatSpecs* outputFormat ,
 					launch_pressureProjection(numBlocks, threadsPerBlock, isf);
 				}	
 
+				//Write current Psi to output texture
 				launch_writePsi(numBlocks, threadsPerBlock, outputFormat->cudaOutput[0], isf);
+				//Increase total time by time step
 				isf.T += isf.Dt;
 			}
 			reset = false;
@@ -299,6 +311,8 @@ ISFTOP::getErrorString(OP_String *error, void* reserved)
     error->setString(myError);
 }
 
+
+//Settin up the parameter interface
 void
 ISFTOP::setupParameters(OP_ParameterManager* manager, void* reserved)
 {

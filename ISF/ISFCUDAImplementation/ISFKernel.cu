@@ -10,47 +10,59 @@ texture<float4, cudaTextureType2D, cudaReadModeElementType> inTex;
 surface<void, cudaSurfaceType2D> outputSurface;
 
 
+//Conversion from 3D vertex index to 1d index
 __device__ int
 voxelToId(int x, int y, int z, int3 M) {
 	dim3 N = dim3 (M.x, M.y, M.z);
 	return (x % N.x) * (N.y * N.z) + (y % N.y) * N.z + (z % N.z);
 }
 
+//calculate position from vertex
 __device__ float3
 voxelToPos(int x, int y, int z, int3 N, float3 L) {
 	return make_float3(float(x) / float(N.x) * L.x, float(y) / float(N.y) * L.y, float(z) / float(N.z) * L.z);
 }
 
+//complex exponential function
 __device__ cuComplex
 cexp(float alpha) {
 	return make_cuComplex(cos(alpha), sin(alpha));
 }
 
+//calculate length of complex number
 __device__ float
 length(cuComplex z) {
 	return sqrt(z.x * z.x + z.y * z.y);
 }
 
+//dot product of real-valued 3-vectors
 __device__ float
 dot(float3 v, float3 w) {
 	return v.x * w.x + v.y * w.y + v.z * w.z;
 }
 
+
+//complex multiplication
 __device__ cuComplex
 cmult(cuComplex v, cuComplex w) {
 	return make_cuComplex(v.x * w.x - v.y * w.y, v.x * w.y + v.y * w.x);
 }
 
+//read values of Psi from input texture
 __global__ void
 readPsi(ISF isf, int width)
 { 
+	//calculating unique 3D identifier/vertex of CUDA thread
 	int x = threadIdx.x + blockIdx.x * blockDim.x;
 	int y = threadIdx.y + blockIdx.y * blockDim.y;
 	int z = threadIdx.z + blockIdx.z * blockDim.z;
 
+	//calculated unique 1d index, corresponding to offset of C++ arrays
 	int id = voxelToId(x, y, z, isf.N);
 
+
 	if (x < isf.N.x && y < isf.N.y && z< isf.N.z) {
+		//calculating respective pixel position for index
 		int xc = id % width;
 		int yc = id / width;
 
@@ -60,6 +72,7 @@ readPsi(ISF isf, int width)
 	}
 }
 
+//Same as above, but writing to prescribed velocity array
 __global__ void
 readPrescribedVelocity(ISF isf, int width)
 {
@@ -77,6 +90,8 @@ readPrescribedVelocity(ISF isf, int width)
 	}
 }
 
+
+//write values of Psi to output texture/ CUDA surface
 __global__ void
 writePsi(ISF isf, int width)
 {
@@ -86,6 +101,7 @@ writePsi(ISF isf, int width)
 
 	int id = voxelToId(x, y, z, isf.N);
 	if (x < isf.N.x && y < isf.N.y && z < isf.N.z) {
+		//calculating pixel position from index
 		int xc = id%width;
 		int yc = id/width;
 		float psix = isf.Psi1[id].x;
@@ -97,6 +113,7 @@ writePsi(ISF isf, int width)
 }
 
 
+//Schrödinger Flow in Fourier Domain
 __global__ void
 schroedingerFlow(ISF isf)
 {
@@ -107,6 +124,7 @@ schroedingerFlow(ISF isf)
 	int id = voxelToId(x, y, z, isf.N);
 
 	if (x < isf.N.x && y < isf.N.y && z < isf.N.z) {
+		//Offsetted k because Fourier transformation is not centered
 		float kx = -(int(float(isf.N.x) / 2. + x) % isf.N.x - float(isf.N.x) / 2.) / isf.L.x;
 		float ky = -(int(float(isf.N.y) / 2. + y) % isf.N.y - float(isf.N.y) / 2.) / isf.L.y;
 		float kz = -(int(float(isf.N.z) / 2. + z) % isf.N.z - float(isf.N.z) / 2.) / isf.L.z;
@@ -120,6 +138,7 @@ schroedingerFlow(ISF isf)
 	}
 }
 
+//normalizing Psi
 __global__ void
 normalize(ISF isf)
 {
@@ -144,6 +163,8 @@ normalize(ISF isf)
 	}
 }
 
+
+//Needed factor after FFT and IFFT.
 __global__ void
 normalizeFFT(ISF isf)
 {
@@ -159,7 +180,7 @@ normalizeFFT(ISF isf)
 	}
 }
 
-
+//calculation of velocity 1-form
 __global__ void
 velocityOneForm(ISF isf) {
 	int x = threadIdx.x + blockIdx.x * blockDim.x;
@@ -194,7 +215,7 @@ velocityOneForm(ISF isf) {
 	}
 }
 
-
+//calculation of divergence
 __global__ void
 divergence(ISF isf) {
 	int x = threadIdx.x + blockIdx.x * blockDim.x;
@@ -218,6 +239,7 @@ divergence(ISF isf) {
 	}
 }
 
+//Solve poisson equation in Fourier domain
 __global__ void
 poissonSolve(ISF isf) {
 	int x = threadIdx.x + blockIdx.x * blockDim.x;
@@ -240,6 +262,7 @@ poissonSolve(ISF isf) {
 	}
 }
 
+
 __global__ void
 gaugeTransform(ISF isf) {
 	int x = threadIdx.x + blockIdx.x * blockDim.x;
@@ -258,6 +281,8 @@ gaugeTransform(ISF isf) {
 	}
 }
 
+
+//Application of prescribed velocity
 __global__ void
 applyPrescribedVelocity(ISF isf) {
 	int x = threadIdx.x + blockIdx.x * blockDim.x;
@@ -286,6 +311,8 @@ applyPrescribedVelocity(ISF isf) {
 	}
 }
 
+
+//application of external force
 __global__ void
 applyExternalForce(ISF isf, float3 ExternalForce) {
 	int x = threadIdx.x + blockIdx.x * blockDim.x;
@@ -306,6 +333,7 @@ applyExternalForce(ISF isf, float3 ExternalForce) {
 extern "C" void
 launch_readPsi(dim3 numBlocks, dim3 threadsPerBlock, cudaArray *g_data_array, ISF isf) {
 	cudaBindTextureToArray(inTex, g_data_array);
+	//width of corresponding 2d texture
 	int width = int(sqrt(float(isf.N.x * isf.N.y * isf.N.z)));
 	readPsi <<< numBlocks, threadsPerBlock >>>(isf, width);
 }
@@ -313,6 +341,7 @@ launch_readPsi(dim3 numBlocks, dim3 threadsPerBlock, cudaArray *g_data_array, IS
 extern "C" void
 launch_readPrescribedVelocity(dim3 numBlocks, dim3 threadsPerBlock, cudaArray * g_data_array, ISF isf) {
 	cudaBindTextureToArray(inTex, g_data_array);
+	//width of corresponding 2d texture
 	int width = int(sqrt(float(isf.N.x * isf.N.y * isf.N.z)));
 	readPrescribedVelocity << < numBlocks, threadsPerBlock >> > (isf,width);
 }
@@ -320,6 +349,7 @@ launch_readPrescribedVelocity(dim3 numBlocks, dim3 threadsPerBlock, cudaArray * 
 extern "C" void
 launch_writePsi(dim3 numBlocks, dim3 threadsPerBlock, cudaArray *output, ISF isf) {
 	cudaBindSurfaceToArray(outputSurface, output);
+	//width of corresponding 2d texture
 	int width = int(sqrt(float(isf.N.x * isf.N.y * isf.N.z)));
 	writePsi <<< numBlocks, threadsPerBlock >>>(isf,width);
 }
@@ -335,9 +365,11 @@ launch_ApplicationOfExternalForce(dim3 numBlocks, dim3 threadsPerBlock, ISF isf,
 	applyExternalForce << < numBlocks, threadsPerBlock >> >(isf, ExternalForce) ;
 }
 
+
+//Algorithm 2: Schrödinger Flow
 extern "C" void
 launch_schroedingerFlow(dim3 numBlocks, dim3 threadsPerBlock, ISF isf) {
-
+	//perform forward FFT for both components of Psi
 	if (cufftExecC2C(isf.Plan, isf.Psi1, isf.Psi1, CUFFT_FORWARD) != cudaSuccess) {
 		fprintf(stderr, "CUFFT error: Failed to execute forward C2C isf.Psi1\n");
 		return;
@@ -348,7 +380,8 @@ launch_schroedingerFlow(dim3 numBlocks, dim3 threadsPerBlock, ISF isf) {
 	}
 
 	schroedingerFlow << < numBlocks, threadsPerBlock >> > (isf);
-		
+
+	//inverse FFT for both components of Psi
 	if (cufftExecC2C(isf.Plan, isf.Psi1, isf.Psi1, CUFFT_INVERSE) != cudaSuccess) {
 		fprintf(stderr, "CUFFT error: Failed to execute inverse C2C isf.Psi1\n");
 		return;
@@ -366,14 +399,14 @@ launch_schroedingerFlow(dim3 numBlocks, dim3 threadsPerBlock, ISF isf) {
 	}
 }
 
-
+//Algorithm 3: Pressure projection
 extern "C" void
 launch_pressureProjection(dim3 numBlocks, dim3 threadsPerBlock, ISF isf){
 	velocityOneForm << < numBlocks, threadsPerBlock >> > (isf);
-	//testVel << < numBlocks, threadsPerBlock >> > (isf);
 	
 	divergence << < numBlocks, threadsPerBlock >> > (isf);
 	
+	//forward FFT of divergence
 	if (cufftExecC2C(isf.Plan, isf.Div, isf.Div, CUFFT_FORWARD) != cudaSuccess) {
 		fprintf(stderr, "CUFFT error: Failed to execute forward C2C isf.Div\n");
 		return;
@@ -381,11 +414,14 @@ launch_pressureProjection(dim3 numBlocks, dim3 threadsPerBlock, ISF isf){
 
 	poissonSolve<< < numBlocks, threadsPerBlock >> > (isf);
 
+
+	//inverse FFT of divergence
 	if (cufftExecC2C(isf.Plan, isf.Div, isf.Div, CUFFT_INVERSE) != cudaSuccess) {
 		fprintf(stderr, "CUFFT error: Failed to execute inverse C2C isf.Div\n");
 		return;
 	}
 	
+	//apply normalization factor of FFT
 	normalizeFFT << < numBlocks, threadsPerBlock >> > (isf);
 	
 	gaugeTransform << < numBlocks, threadsPerBlock >> > (isf);
